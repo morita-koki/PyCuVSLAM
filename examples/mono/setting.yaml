@@ -1,0 +1,24 @@
+bag: /mnt/d/map4/SEAMS_ME/gekiyaba_tunnel/2024-08-20-02-09-29/camera/2024-08-20-02-09-29_camera_0.bag
+workdir: /mnt/d/map4/SEAMS_ME/gekiyaba_tunnel/pycuvslam
+
+cameras:
+  - name: left
+    topic: /camera/0/image_raw/compressed
+    intrinsics: [876.03496, 930.83094, 949.76907, 642.9536]
+    distortion_coefficients: [-0.147646, 0.036049, -0.001963, -0.002812, -0.005028]
+    resolution: [1920, 1280]
+  - name: front
+    topic: /camera/1/image_raw/compressed
+    intrinsics: [866.11339, 919.86927, 948.00548, 645.7873]
+    distortion_coefficients: [-0.145935, 0.035833, -0.001521, -0.004221, -0.005162]
+    resolution: [1920, 1280]
+  - name: right
+    topic: /camera/2/image_raw/compressed
+    intrinsics: [873.72839, 928.11026, 946.15119, 648.52327]
+    distortion_coefficients: [-0.149761, 0.039834, -0.000765, -0.003972, -0.006257]
+    resolution: [1920, 1280]
+  # - name: rear
+  #   topic: /camera/2/image_raw/compressed
+  #   intrinsics: [800.0, 800.0, 960.0, 540.0]
+  #   distortion_coefficients: [0.0, 0.0, 0.0, 0.0, 0.0]
+  #   resolution: [1920, 1080]
