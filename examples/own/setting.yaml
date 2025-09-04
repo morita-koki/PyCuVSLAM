@@ -1,0 +1,44 @@
+bag: /media/morita/SSD_B0084/visual-odometry/dataset/metro_20240820/2024-08-20-02-09-29/camera/2024-08-20-02-09-29_camera_0.bag
+workdir: /media/morita/SSD_B0084/visual-odometry/dataset/metro_20240820/pycuvslam
+
+encode: rgb8
+
+cameras:
+  - name: left
+    topic: /camera/0/image_raw/compressed
+    extrinsic: [-0.0306988, -0.999528, 0.00142255, 0,
+          0.999526, -0.0306951, 0.00254487, -0.05,
+          -0.0025, 0.0015, 0.999996, -0.095,
+          0, 0, 0, 1]
+    intrinsic: [876.03496,   0.     , 949.76907,
+           0.     , 930.83094, 642.9536 ,
+           0.     ,   0.     ,   1.     ]
+    distortion: [-0.147646, 0.036049, -0.001963, -0.002812, -0.005028]
+    resolution: [1920, 1280]
+  - name: front
+    topic: /camera/1/image_raw/compressed
+    extrinsic: [0.999305, -0.0370548, -0.00394155, -0.05,
+          0.0369911, 0.999201, -0.0151556, 0,
+          0.00449999, 0.0149993, 0.999877, -0.095,
+          0, 0, 0, 1]
+    intrinsic: [866.11339,   0.     , 948.00548,
+           0.     , 919.86927, 645.7873 ,
+           0.     ,   0.     ,   1.     ]
+    distortion: [-0.145935, 0.035833, -0.001521, -0.004221, -0.005162]
+    resolution: [1920, 1280]
+  - name: right
+    topic: /camera/2/image_raw/compressed
+    extrinsic: [-0.00920357, 0.999945, 0.00498134, 0,
+          -0.999956, -0.00919347, -0.00204591, 0.05,
+          -0.002, -0.00499995, 0.999985, -0.095,
+          0, 0, 0, 1]
+    intrinsic: [873.72839,   0.     , 946.15119,
+           0.     , 928.11026, 648.52327,
+           0.     ,   0.     ,   1.     ]
+    distortion: [-0.149761, 0.039834, -0.000765, -0.003972, -0.006257]
+    resolution: [1920, 1280]
+  # - name: rear
+  #   topic: /camera/2/image_raw/compressed
+  #   intrinsics: [800.0, 800.0, 960.0, 540.0]
+  #   distortion: [0.0, 0.0, 0.0, 0.0, 0.0]
+  #   resolution: [1920, 1080]
