@@ -24,6 +24,8 @@ sequence_path = os.path.join(
     "dataset/sequences/06"
 )
 
+sequence_path = '/media/morita/SSD_B0084/kitti/06'
+
 # Lambda to convert quaternion [x, y, z, w] to 3x3 rotation matrix (as list of lists)
 quaternion_to_rotation_matrix = lambda q: R.from_quat(q).as_matrix().tolist()
 
@@ -144,7 +146,7 @@ intrinsics = loadtxt(
     usecols=range(1, 13)
 )[:4].reshape(4, 3, 4)
 
-size = Image.open(os.path.join(sequence_path, 'image_0', '000001.png')).size
+size = Image.open(os.path.join(sequence_path, 'image_2', '000001.png')).size
 
 cameras = [cuvslam.Camera(), cuvslam.Camera()]
 for i in [0, 1]:
@@ -204,7 +206,7 @@ if os.path.exists(trajectory_file) and os.path.exists(map_path):
 if os.path.exists(map_path) and (guess_pose is not None):
     
     init_images = [
-        asarray(Image.open(os.path.join(sequence_path, f'image_{cam}', f'{IDX:0>6}.png')))
+        asarray(Image.open(os.path.join(sequence_path, f'image_{cam+2}', f'{IDX:0>6}.png')))
         for cam in [0, 1]
     ]
     _, _ = tracker.track(timestamps[IDX], init_images)
@@ -240,7 +242,7 @@ loop_closure_poses = []
 for frame in range(IDX, len(timestamps)):
     # Load grayscale pixels as array for left and right absolute image paths
     images = [
-        asarray(Image.open(os.path.join(sequence_path, f'image_{cam}', f'{frame:0>6}.png')))
+        asarray(Image.open(os.path.join(sequence_path, f'image_{cam+2}', f'{frame:0>6}.png')))
         for cam in [0, 1]
     ]
 

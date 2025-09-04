@@ -21,6 +21,8 @@ sequence_path = os.path.join(
     "dataset/sequences/06"
 )
 
+sequence_path = '/media/morita/SSD_B0084/kitti/02'
+
 # Generate pseudo-random colour from integer identifier for visualization
 def color_from_id(identifier): 
     return [(identifier * 17) % 256, (identifier * 31) % 256, (identifier * 47) % 256]
@@ -53,7 +55,7 @@ intrinsics = loadtxt(
     usecols=range(1, 13)
 )[:4].reshape(4, 3, 4)
 
-size = Image.open(os.path.join(sequence_path, 'image_0', '000001.png')).size
+size = Image.open(os.path.join(sequence_path, 'image_2', '000001.png')).size
 
 cameras = [cuvslam.Camera(), cuvslam.Camera()]
 for i in [0, 1]:
@@ -81,7 +83,7 @@ trajectory = []
 for frame in range(len(timestamps)):
     # Load grayscale pixels as array for left and right absolute image paths
     images = [
-        asarray(Image.open(os.path.join(sequence_path, f'image_{cam}', f'{frame:0>6}.png')))
+        asarray(Image.open(os.path.join(sequence_path, f'image_{cam+2}', f'{frame:0>6}.png')))
         for cam in [0, 1]
     ]
 
