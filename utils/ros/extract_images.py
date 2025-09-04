@@ -313,20 +313,23 @@ def extract_images_from_bag(config, output_dir=None, debug=False, max_images=Non
                         error_counts[camera_name] += 1
                         continue
                     
-                    is_compressed = 'CompressedImage' in topic_type
+                    # is_compressed = 'CompressedImage' in topic_type
                     
                     # Process image based on message type
-                    if is_compressed:
-                        if debug and frame_counts[camera_name] < 3:
-                            print(f"  Processing compressed frame {frame_counts[camera_name] + 1} for camera '{camera_name}'")
+                    # if is_compressed:
+                    #     if debug and frame_counts[camera_name] < 3:
+                    #         print(f"  Processing compressed frame {frame_counts[camera_name] + 1} for camera '{camera_name}'")
                         
-                        cv_image = decompress_compressed_image(msg, debug=(debug and frame_counts[camera_name] < 3))
-                    else:
-                        # Regular Image message
-                        if debug and frame_counts[camera_name] < 3:
-                            print(f"  Processing regular frame {frame_counts[camera_name] + 1} for camera '{camera_name}'")
-                            
-                        cv_image = convert_ros_image(msg, debug=(debug and frame_counts[camera_name] < 3))
+                    #     cv_image = decompress_compressed_image(msg, debug=(debug and frame_counts[camera_name] < 3))
+                    # else:
+                    # Regular Image message
+                    # if debug and frame_counts[camera_name] < 3:
+                    #     print(f"  Processing regular frame {frame_counts[camera_name] + 1} for camera '{camera_name}'")
+                        
+                    # cv_image = convert_ros_image(msg, debug=(debug and frame_counts[camera_name] < 3))
+                    
+                    np_arr = np.frombuffer(msg.data, np.uint8)
+                    cv_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
                     
                     # Generate output filename
                     filename = f"{output_dir}/camera/{camera_name}/{timestamp_ns}.jpg"
