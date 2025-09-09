@@ -250,7 +250,8 @@ def main():
 
     odom_trajectory = []
 
-    for frame_metadata in frames_metadata:
+    for i, frame_metadata in enumerate(frames_metadata):
+        # if i < 1500: continue  # Skip first 1500 frames for metro_20241227
         timestamp = frame_metadata['timestamp']
         
         images = [load_frame(image_path,decompressor) for image_path in frame_metadata['images_paths']]
