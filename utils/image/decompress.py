@@ -67,9 +67,10 @@ class ImageDecompressor:
             case 'bayer_bggr8' | 'bayer_bggr':
                 cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BAYER_BG2RGB)
             case 'rgb8':
-                pass  # Already RGB
-            case 'bgr8':
                 cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+            case 'bgr8':
+                # cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+                pass
             case _:
                 cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BAYER_RG2RGB)  # Default
 
