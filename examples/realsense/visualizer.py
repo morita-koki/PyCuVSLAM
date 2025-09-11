@@ -17,7 +17,7 @@ import rerun.blueprint as rrb
 import cuvslam as vslam
 
 # Constants
-DEFAULT_NUM_VIZ_CAMERAS = 1
+DEFAULT_NUM_VIZ_CAMERAS = 2
 POINT_RADIUS = 5.0
 ARROW_SCALE = 0.1
 GRAVITY_ARROW_SCALE = 0.02
@@ -45,10 +45,10 @@ class RerunVisualizer:
         rr.send_blueprint(
             rrb.Blueprint(
                 rrb.TimePanel(state="collapsed"),
-                rrb.Horizontal(
-                    column_shares=[0.5, 0.5],
+                rrb.Vertical(
+                    row_shares=[0.5, 0.5],
                     contents=[
-                        rrb.Vertical(contents=[
+                        rrb.Horizontal(contents=[
                             rrb.Spatial2DView(origin=f'world/camera_{i}')
                             for i in range(self.num_viz_cameras)
                         ]),
@@ -139,6 +139,10 @@ class RerunVisualizer:
         observations_main_cam: List[List[vslam.Observation]],
         trajectory: List[np.ndarray],
         timestamp: int,
+        current_landmarks: List[vslam.Landmark] = [],
+        final_landmarks: List[vslam.Landmark] = [],
+        trajectory_slam: Optional[List[np.ndarray]] = None,
+        loop_closure_poses: Optional[List[np.ndarray]] = None,
         gravity: Optional[np.ndarray] = None
     ) -> None:
         """Visualize current frame state using Rerun.
@@ -166,3 +170,28 @@ class RerunVisualizer:
             self._log_gravity(gravity)
             
         rr.log("world/timestamp", rr.TextLog(str(timestamp)))
+
+        if trajectory_slam is not None:
+            rr.log('trajectory_slam', rr.LineStrips3D(trajectory_slam))
+        
+        if loop_closure_poses is not None and len(loop_closure_poses) > 0:  
+            rr.log('loop_closures', rr.Points3D(positions=loop_closure_poses, colors=[[255,0,0]], radii=0.1))
+
+
+        def color_from_id(identifier):
+            """Generate pseudo-random color from integer identifier for visualization."""
+            return [
+                (identifier * 17) % 256,
+                (identifier * 31) % 256,
+                (identifier * 47) % 256
+            ]
+        rr.log("world/camera_0/current_landmarks_center", rr.Points3D(
+            [l.coords for l in current_landmarks], radii=0.05,
+            colors=[color_from_id(l.id) for l in current_landmarks]
+        ))
+
+        rr.log("world/camera_0/current_landmarks_lines", rr.Arrows3D(
+            vectors=[l.coords for l in current_landmarks], radii=0.01,
+            colors=[color_from_id(l.id) for l in current_landmarks] 
+        ))
+        rr.log('world/final_landmarks', rr.Points3D(final_landmarks, radii=0.02, colors=[[240,247,240] for _ in final_landmarks]))

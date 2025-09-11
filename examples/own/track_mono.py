@@ -268,6 +268,10 @@ def main():
 
         # Get current pose and observations for the main camera and gravity in rig frame
         odom_pose = odom_pose_estimate.world_from_rig.pose
+        landmarks = tracker.get_last_landmarks()
+        landmark_xyz = [l.coords for l in landmarks]
+        landmarks_colors = [color_from_id(l.id) for l in landmarks]
+        final_landmarks = tracker.get_final_landmarks()
         current_observations_main_cam = tracker.get_last_observations(0)
         trajectory.append(odom_pose.translation)
         odom_trajectory.append([timestamp] + list(odom_pose.translation) + list(odom_pose.rotation))
@@ -299,6 +303,15 @@ def main():
             rr.Points2D(positions=points, colors=colors, radii=5.0),
             rr.Image(images[0]).compress(jpeg_quality=80)
         )
+
+        rr.log('world/front/landmarks_center', rr.Points3D(
+            landmark_xyz, radii=0.25, colors=landmarks_colors
+        ))
+        rr.log('world/front/landmarks_lines', rr.Arrows3D(
+            vectors=landmark_xyz, radii=0.05, colors=landmarks_colors
+        ))
+
+        rr.log('world/final_landmarks', rr.Points3D(list(final_landmarks.values()), radii=0.1))
 
 
 

@@ -157,11 +157,11 @@ def camera_thread(
                 np.asanyarray(ir_right_frame.get_data())
             )
 
-            odom_pose_estimate, _ = tracker.track(current_timestamp, images)
+            odom_pose_estimate, slam_pose = tracker.track(current_timestamp, images)
             odom_pose = odom_pose_estimate.world_from_rig.pose
 
             # Put result in queue for main thread
-            q.put([current_timestamp, odom_pose, images])
+            q.put([current_timestamp, odom_pose, slam_pose, images])
             thread_with_timestamp.last_low_rate_timestamp = current_timestamp
     except Exception as e:
         print(f"Camera thread error: {e}")
@@ -211,7 +211,77 @@ def setup_camera_parameters() -> dict:
 
     return camera_params
 
+from scipy.spatial.transform import Rotation as R
+# Lambda to convert quaternion [x, y, z, w] to 3x3 rotation matrix (as list of lists)
+quaternion_to_rotation_matrix = lambda q: R.from_quat(q).as_matrix().tolist()
 
+# Lambda to multiply two quaternions [x, y, z, w] * [x, y, z, w]
+quaternion_multiply = lambda q1, q2: (R.from_quat(q1) * R.from_quat(q2)).as_quat().tolist()
+
+# Lambda to rotate a 3D vector using a 3x3 rotation matrix
+rotate_vector = lambda vector, rotation_matrix: R.from_matrix(rotation_matrix).apply(vector).tolist()
+
+
+def combine_poses(initial_pose, relative_pose):
+    """
+    Combine initial pose with relative pose to get absolute pose.
+    
+    Args:
+        initial_pose: cuvslam.Pose object representing initial pose
+        relative_pose: cuvslam.Pose object representing relative pose
+    
+    Returns:
+        cuvslam.Pose object representing combined absolute pose
+    """
+    # Get rotation matrix from initial pose quaternion
+    rotation_matrix = quaternion_to_rotation_matrix(initial_pose.rotation)
+    
+    # Rotate relative translation by initial pose rotation
+    rotated_rel_t = rotate_vector(relative_pose.translation, rotation_matrix)
+    
+    # Add initial translation
+    absolute_translation = [
+        initial_pose.translation[0] + rotated_rel_t[0],
+        initial_pose.translation[1] + rotated_rel_t[1],
+        initial_pose.translation[2] + rotated_rel_t[2]
+    ]
+    
+    # Multiply quaternions
+    absolute_rotation = quaternion_multiply(initial_pose.rotation, relative_pose.rotation)
+    
+    return vslam.Pose(translation=absolute_translation, rotation=absolute_rotation)
+
+
+def transform_landmarks(landmarks, initial_pose):
+    """
+    Transform landmarks by initial pose (rotation + translation).
+    
+    Args:
+        landmarks: list of 3D landmark coordinates
+        initial_pose: cuvslam.Pose object representing initial pose
+    
+    Returns:
+        List of transformed 3D landmark coordinates
+    """
+    rotation_matrix = quaternion_to_rotation_matrix(initial_pose.rotation)
+    transformed_landmarks = []
+    
+    for landmark in landmarks:
+        # Rotate landmark by initial pose rotation
+        rotated_landmark = rotate_vector(landmark, rotation_matrix)
+        
+        # Add initial translation
+        transformed_landmark = [
+            initial_pose.translation[0] + rotated_landmark[0],
+            initial_pose.translation[1] + rotated_landmark[1],
+            initial_pose.translation[2] + rotated_landmark[2]
+        ]
+        transformed_landmarks.append(transformed_landmark)
+    
+    return transformed_landmarks
+
+
+from numpy import array_equal as np_array_equal
 def main() -> None:
     """Main function for VIO tracking."""
     # Setup camera parameters
@@ -225,12 +295,14 @@ def main() -> None:
         odometry_mode=vslam.Tracker.OdometryMode.Inertial,
         horizontal_stereo_camera=True
     )
+    SLAM_SYNC_MODE=True
+    s_cfg = vslam.Tracker.SlamConfig(sync_mode=SLAM_SYNC_MODE)
 
     # Create rig using utility function
     rig = get_rs_vio_rig(camera_params)
 
     # Initialize tracker
-    tracker = vslam.Tracker(rig, cfg)
+    tracker = vslam.Tracker(rig, cfg, s_cfg)
 
     # Set up IR pipeline
     ir_pipe = rs.pipeline()
@@ -291,12 +363,14 @@ def main() -> None:
 
     frame_id = 0
     trajectory: List[np.ndarray] = []
+    trajectory_slam: List[np.ndarray] = []
+    loop_closure_poses: List[np.ndarray] = []
 
     try:
         while True:
             # Get the output from the queue with timeout
             try:
-                timestamp, odom_pose, images = q.get(timeout=1.0)
+                timestamp, odom_pose, slam_pose, images = q.get(timeout=1.0)
             except queue.Empty:
                 continue
 
@@ -304,23 +378,38 @@ def main() -> None:
                 continue
 
             frame_id += 1
-            trajectory.append(odom_pose.translation)
+            slam_initial_pose = vslam.Pose(translation=[0, 0, 0], rotation=[0, 0, 0, 1])
+            current_pose = combine_poses(slam_initial_pose, odom_pose)
+            trajectory.append(current_pose.translation)
+            trajectory_slam.append(slam_pose.translation)   
 
             gravity = None
             if cfg.odometry_mode == vslam.Tracker.OdometryMode.Inertial:
                 # Gravity estimation requires sufficient keyframes with motion
                 gravity = tracker.get_last_gravity()
 
+            raw_final_landmarks = list(tracker.get_final_landmarks().values())
+            final_landmarks = transform_landmarks(raw_final_landmarks, slam_initial_pose)
+
+            current_lc_poses = tracker.get_loop_closure_poses()
+            if (current_lc_poses and 
+                (not loop_closure_poses or 
+                not np_array_equal(current_lc_poses[-1].pose.translation, loop_closure_poses[-1]))):
+                loop_closure_poses.append(current_lc_poses[-1].pose.translation)    
+
             # Visualize results for left camera
             visualizer.visualize_frame(
                 frame_id=frame_id,
                 images=images,
-                pose=odom_pose,
+                # pose=odom_pose,
+                pose=current_pose,
                 observations_main_cam=[tracker.get_last_observations(0), tracker.get_last_observations(1)],
                 trajectory=trajectory,
+                trajectory_slam=trajectory_slam,
+                loop_closure_poses=loop_closure_poses,
                 timestamp=timestamp,
                 current_landmarks=tracker.get_last_landmarks(),
-                final_landmarks=list(tracker.get_final_landmarks().values()),
+                final_landmarks=final_landmarks,
                 gravity=gravity
             )
 

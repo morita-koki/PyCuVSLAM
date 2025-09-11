@@ -142,7 +142,9 @@ def main() -> None:
                     pose=odom_pose,
                     observations_main_cam=[tracker.get_last_observations(0), tracker.get_last_observations(1)],
                     trajectory=trajectory,
-                    timestamp=timestamp
+                    timestamp=timestamp,
+                    current_landmarks=tracker.get_last_landmarks(),
+                    final_landmarks=list(tracker.get_final_landmarks().values()),
                 )
 
     finally:
